@@ -1,19 +1,25 @@
 # This file is just Python, with a touch of Django which means you
 # you can inherit and tweak settings to your hearts content.
+from os import path, environ
+import functools
+
 from sentry.conf.server import *  # noqa
-import os.path
 
 from decouple import config
 import dj_database_url
 import django_cache_url
-import functools
 
-CONF_ROOT = os.path.dirname(__file__)
-DATA_DIR = config('SENTRY_DATA_DIR', default='/data')
-DEFAULT_SQLITE_DB_PATH = os.path.join(DATA_DIR, 'sentry.db')
+CONF_ROOT = path.dirname(__file__)
+DATA_DIR = path.expandvars(config('SENTRY_DATA_DIR', default='/data'))
+DEFAULT_SQLITE_DB_PATH = path.join(DATA_DIR, 'sentry.db')
 
-REDIS_HOST = config('SENTRY_REDIS_HOST', default='redis')
-REDIS_PORT = config('SENTRY_REDIS_PORT', default=6379, cast=int)
+REDIS_HOST = path.expandvars(config('SENTRY_REDIS_HOST', default='redis'))
+REDIS_PORT = path.expandvars(config('SENTRY_REDIS_PORT', default=6379, cast=int))
+
+try:
+    environ[dj_database_url.DEFAULT_ENV] = path.expandvars(environ[dj_database_url.DEFAULT_ENV])
+except KeyError:
+    pass
 
 DATABASES = {
     'default': dj_database_url.config(default='sqlite:///{0}'.format(DEFAULT_SQLITE_DB_PATH))
@@ -23,6 +29,11 @@ if 'postgres' in DATABASES['default']['ENGINE']:
     DATABASES['default']['OPTIONS'] = {
         'autocommit': True,
     }
+
+try:
+    environ[django_cache_url.DEFAULT_ENV] = path.expandvars(environ[django_cache_url.DEFAULT_ENV])
+except KeyError:
+    pass
 
 CACHES = {'default': django_cache_url.config() }
 SENTRY_CACHE = 'sentry.cache.django.DjangoCache'
@@ -111,8 +122,8 @@ SENTRY_WEB_OPTIONS = {
     'workers': config('SENTRY_WORKERS', default=3, cast=int),  # the number of gunicorn workers
     'limit_request_line': 0,  # required for raven-js
     'secure_scheme_headers': {'X-FORWARDED-PROTO': 'https'},
-    'errorlog' : os.path.join(DATA_DIR, 'gunicorn_error.log'),
-    'accesslog' : os.path.join(DATA_DIR, 'gunicorn_access.log'),
+    'errorlog' : path.join(DATA_DIR, 'gunicorn_error.log'),
+    'accesslog' : path.join(DATA_DIR, 'gunicorn_access.log'),
 }
 
 # allows JavaScript clients to submit cross-domain error reports. Useful for local development
@@ -125,12 +136,18 @@ SENTRY_ALLOW_ORIGIN = config('SENTRY_ALLOW_ORIGIN', default=None)
 # For more information check Django's documentation:
 #  https://docs.djangoproject.com/en/1.3/topics/email/?from=olddocs#e-mail-backends
 
-EMAIL_BACKEND = config('SENTRY_EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+MANDRILL_API_KEY = config('MANDRILL_API_KEY')
+if MANDRILL_API_KEY and not config('SENTRY_EMAIL_BACKEND'):
+    EMAIL_BACKEND = 'djrill.mail.backends.djrill.DjrillBackend'
+else:
+    EMAIL_BACKEND = config(
+        'SENTRY_EMAIL_BACKEND',
+        default='django.core.mail.backends.console.EmailBackend')
 
-EMAIL_HOST = config('SENTRY_EMAIL_HOST', default='localhost')
-EMAIL_HOST_PASSWORD = config('SENTRY_EMAIL_HOST_PASSWORD', default='')
-EMAIL_HOST_USER = config('SENTRY_EMAIL_HOST_USER', default='')
-EMAIL_PORT = config('SENTRY_EMAIL_PORT', default=25, cast=int)
+EMAIL_HOST = path.expandvars(config('SENTRY_EMAIL_HOST', default='localhost'))
+EMAIL_HOST_PASSWORD = path.expandvars(config('SENTRY_EMAIL_HOST_PASSWORD', default=''))
+EMAIL_HOST_USER = path.expandvars(config('SENTRY_EMAIL_HOST_USER', default=''))
+EMAIL_PORT = path.expandvars(config('SENTRY_EMAIL_PORT', default=25, cast=int))
 EMAIL_USE_TLS = config('SENTRY_EMAIL_USE_TLS', default=False, cast=bool)
 
 # The email address to send on behalf of
@@ -172,7 +189,9 @@ BITBUCKET_CONSUMER_KEY = config('BITBUCKET_CONSUMER_KEY', default='')
 BITBUCKET_CONSUMER_SECRET = config('BITBUCKET_CONSUMER_SECRET', default='')
 
 # custom settings
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    config('ALLOWED_HOSTS', default='*')
+]
 LOGGING['disable_existing_loggers'] = False
 
 SENTRY_BEACON = config('SENTRY_BEACON', default=True, cast=bool)
