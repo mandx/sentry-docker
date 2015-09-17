@@ -1,6 +1,25 @@
 Sentry in Docker
 ==================
 
+This is basically a fork of [slafs/sentry](https://hub.docker.com/r/slafs/sentry/), but some environment variables are expanded when loading Sentry settings.
+
+The variables that will be expanded are:
+- `SENTRY_DATA_DIR`
+- `SENTRY_REDIS_HOST`
+- `SENTRY_REDIS_PORT`
+- `DATABASE_URL`
+- `CACHE_URL`
+- `SENTRY_EMAIL_HOST`
+- `SENTRY_EMAIL_HOST_PASSWORD`
+- `SENTRY_EMAIL_HOST_USER`
+- `SENTRY_EMAIL_PORT`
+
+If any these variables contain text in the form `$VARIABLE_NAME` then that text will be replaced by the value of the `VARIABLE_NAME` environment variable. Currently this is achieved using the [`os.path.expandvars`](https://docs.python.org/2/library/os.path.html#os.path.expandvars) Python function, which has some limitations, like no `$`-escaping support.
+
+For convenience, the settings module will also look for the `MANDRILL_API_KEY` environment variable (but it will not be expanded), and set `EMAIL_BACKEND` to `'djrill.mail.backends.djrill.DjrillBackend'` if this variable is defined and the `SENTRY_EMAIL_BACKEND` environment variable if not set. This allows easy setup of [Mandrill](http://mandrillapp.com/) within Sentry.
+
+## Original README ##
+
 ## Warning about build tags ##
 
 Latest changes introduced some new build tags:
