@@ -14,7 +14,11 @@ DATA_DIR = path.expandvars(config('SENTRY_DATA_DIR', default='/data'))
 DEFAULT_SQLITE_DB_PATH = path.join(DATA_DIR, 'sentry.db')
 
 REDIS_HOST = path.expandvars(config('SENTRY_REDIS_HOST', default='redis'))
-REDIS_PORT = path.expandvars(config('SENTRY_REDIS_PORT', default=6379, cast=int))
+REDIS_PORT = config('SENTRY_REDIS_PORT', default=6379, cast=int)
+try:
+    REDIS_PORT = path.expandvars(REDIS_PORT)
+except TypeError:
+    pass
 
 try:
     environ[dj_database_url.DEFAULT_ENV] = path.expandvars(environ[dj_database_url.DEFAULT_ENV])
@@ -136,7 +140,7 @@ SENTRY_ALLOW_ORIGIN = config('SENTRY_ALLOW_ORIGIN', default=None)
 # For more information check Django's documentation:
 #  https://docs.djangoproject.com/en/1.3/topics/email/?from=olddocs#e-mail-backends
 
-MANDRILL_API_KEY = config('MANDRILL_API_KEY')
+MANDRILL_API_KEY = config('MANDRILL_API_KEY', default=None)
 if MANDRILL_API_KEY and not config('SENTRY_EMAIL_BACKEND'):
     EMAIL_BACKEND = 'djrill.mail.backends.djrill.DjrillBackend'
 else:
@@ -147,7 +151,11 @@ else:
 EMAIL_HOST = path.expandvars(config('SENTRY_EMAIL_HOST', default='localhost'))
 EMAIL_HOST_PASSWORD = path.expandvars(config('SENTRY_EMAIL_HOST_PASSWORD', default=''))
 EMAIL_HOST_USER = path.expandvars(config('SENTRY_EMAIL_HOST_USER', default=''))
-EMAIL_PORT = path.expandvars(config('SENTRY_EMAIL_PORT', default=25, cast=int))
+EMAIL_PORT = config('SENTRY_EMAIL_PORT', default=25, cast=int)
+try:
+    EMAIL_PORT = path.expandvars(EMAIL_PORT)
+except TypeError:
+    pass
 EMAIL_USE_TLS = config('SENTRY_EMAIL_USE_TLS', default=False, cast=bool)
 
 # The email address to send on behalf of
