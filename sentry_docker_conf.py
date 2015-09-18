@@ -299,3 +299,7 @@ if SENTRY_USE_REMOTE_USER:
         MIDDLEWARE_CLASSES += ('sentry_config.LAZY_CUSTOM_REMOTE_USER_MIDDLEWARE',)
     else:
         MIDDLEWARE_CLASSES += ('django.contrib.auth.middleware.RemoteUserMiddleware',)
+
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
